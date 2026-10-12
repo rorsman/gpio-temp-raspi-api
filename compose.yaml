@@ -1,0 +1,29 @@
+name: gpio-temp-raspi-api
+
+services:
+  temperature-api:
+    image: gpio-temp-raspi-api:${IMAGE_TAG:-latest}
+    platform: linux/arm64
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      SENSOR_ID: "${SENSOR_ID:-}"
+      SENSOR_BASE_PATH: /sys/bus/w1/devices
+      SENSOR_SAMPLE_DELAY_MS: "${SENSOR_SAMPLE_DELAY_MS:-1000}"
+      SENSOR_MAX_AGE: "${SENSOR_MAX_AGE:-5s}"
+    volumes:
+      # Mount /sys rather than /sys/bus/w1/devices because device entries are symlinks
+      # into /sys/devices; their targets must also be visible inside the container.
+      - type: bind
+        source: /sys
+        target: /sys
+        read_only: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    stop_grace_period: 30s
